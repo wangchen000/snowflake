@@ -3,8 +3,12 @@ mod snowflake;
 
 #[cfg(test)]
 mod tests {
+    use crate::snowflake::Snowflake;
+
     #[test]
     fn it_works() {
-        assert_eq!(2 + 2, 4);
+        let mut s = Snowflake::kubernetes();
+        let id = s.generate().unwrap();
+        println!("{}", id)
     }
 }

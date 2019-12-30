@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
-use std::error::Error;
+use chrono::Utc;
 
 pub struct Snowflake {
     epoch: i64,
@@ -14,8 +14,8 @@ pub struct Snowflake {
 impl Snowflake {
     pub fn kubernetes() -> Snowflake {
         let ip = get_ip().unwrap();
-        let ip_split = ip.split(".");
-        let ip_low = ip_split[2].parse::<i64>() << 8 | ip_split[3];
+        let ip_split: Vec<&str> = ip.split(".").collect();
+        let ip_low = ip_split[2].to_string().parse::<i64>().unwrap() << 8 | ip_split[3].to_string().parse::<i64>().unwrap();
         Snowflake {
             epoch: 1575129600000,
             worker_id: ip_low,
@@ -31,19 +31,19 @@ impl Snowflake {
             worker_id,
             sequence: 0,
             time: Arc::new(Mutex::new(0)),
-            sequence_mask: -1 ^ -1 << 12,
+            sequence_mask: -1 ^ (-1 << 12),
         }
     }
 
     pub fn generate(&mut self) -> Option<i64> {
-        let mut last_timestamp = self.time.lock();
+        let mut last_timestamp = self.time.lock().unwrap();
         let mut timestamp = self.get_time();
         if timestamp < *last_timestamp {
             if *last_timestamp - timestamp > 150 {
-                None
+                return None
             } else {
-                thread::sleep(time::Duration::from_millis(*last_timestamp - timestamp + 1));
-                return self.generate()
+                thread::sleep(time::Duration::from_millis((*last_timestamp - timestamp + 1) as u64));
+                timestamp = self.get_time();
             }
         } else if timestamp == *last_timestamp {
             self.sequence = (self.sequence + 1) & self.sequence_mask

@@ -52,6 +52,9 @@ impl Snowflake {
         }
 
         *last_timestamp = timestamp;
+        println!("{}",timestamp);
+        println!("{}",self.worker_id);
+        println!("{}",self.sequence);
         Option::from((timestamp << 28) | (self.worker_id << 12) | self.sequence)
     }
 
